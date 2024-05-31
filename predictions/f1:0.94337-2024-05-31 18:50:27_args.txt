@@ -1,0 +1,18 @@
+data_path: ./data/
+save_path: ./save/
+load_path: ./save/2024-05-31 17:06:42_0.9430837605822953_model.pth
+predict_path: ./predictions
+save_log_path: ./logs/
+input_dim: 512
+hidden_dim: 256
+output_dim: 64
+batch_size: 35000
+num_epochs: 40
+lr: 0.0001
+lr_decay: 0.1
+lr_period: 15
+weight_decay: 0
+k: 3
+device: cuda:3
+seed: 129222
+log_interval: 100
