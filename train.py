@@ -31,17 +31,18 @@ def train(args, hetero_graph, test_refs, rel_list):
         num_workers=0,     
     )
 
-    model = Model(args.input_dim, args.hidden_dim, args.output_dim, rel_list).to(device)
+    model = Model(args.input_dim, args.hidden_dim, args.output_dim, rel_list,args).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    lr_sche = torch.optim.lr_scheduler.StepLR(opt, args.lr_period, args.lr_decay,verbose=True)
-
-    if args.load_path != 'where':
-        model.load_state_dict(torch.load(args.load_path))
+    # lr_sche = torch.optim.lr_scheduler.StepLR(opt, args.lr_period, args.lr_decay,verbose=True)
+    lr_sche=torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=10, eta_min=args.lr_end, last_epoch=-1, verbose=True)
+    if args.load_path != None:
+        model.load_state_dict(torch.load(args.load_path,map_location=device))
         print('Model loaded from', args.load_path)
 
     best_f1 = 0
     best_thresh = None
     best_embed = None
+    best_model = None
 
     epoch_loss_log=[]
     print(f'Start training GAT on {device}...\n')
@@ -73,6 +74,7 @@ def train(args, hetero_graph, test_refs, rel_list):
             loss.backward()
             opt.step()
         lr_sche.step()
+        print('lr:',opt.param_groups[0]['lr'])
         print(f'loss: {(np.array(epoch_loss).mean()):.5f}')
         epoch_loss_log.append(np.array(epoch_loss).mean())
         model.eval()
@@ -122,6 +124,7 @@ def train(args, hetero_graph, test_refs, rel_list):
             best_f1 = cur_best_f1
             best_embed = node_embeddings
             best_thresh = cur_best_thresh
+            best_model = model
         
         t2 = time.time()
         print(f"acc:{acc:.4f}, precision:{cur_pr:.4f}, recall:{cur_re:.4f}, F1-Score: {cur_best_f1:.5f}, best: {best_f1:.5f}, time: {(t2-t1):.2f}s")
@@ -137,6 +140,6 @@ def train(args, hetero_graph, test_refs, rel_list):
     save_path = args.save_path
     if not os.path.exists(save_path):
         os.makedirs(save_path)
-    torch.save(model.state_dict(), f'{save_path}/{current_time}_{best_f1}_model.pth')
+    torch.save(best_model.state_dict(), f'{save_path}/{current_time}_{best_f1}_model.pth')
 
     return best_embed, best_thresh, best_f1

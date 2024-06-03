@@ -11,9 +11,10 @@ def Node2Vec(args,G, path, window_size=4,epochs=150):
     n2vModel = dgl.nn.pytorch.MetaPath2Vec(G,path,emb_dim=args.input_dim,window_size=window_size).to(device)
 
     n2vDataLoader = DataLoader(torch.arange(G.num_nodes('author')), batch_size=256, shuffle=True,collate_fn=n2vModel.sample)
-    optimizer = torch.optim.SparseAdam(n2vModel.parameters(),lr=0.0001)
+    optimizer = torch.optim.SparseAdam(n2vModel.parameters(),lr=0.001)
+    lr_sche = torch.optim.lr_scheduler.StepLR(optimizer, 25, 0.7,verbose=True)
     print("Start training the Node2Vec model...")
-    for epoch in tqdm.tqdm(range(epochs)):
+    for epoch in tqdm.tqdm(range(200)):
    
         for (pos_u, pos_v, neg_v) in n2vDataLoader:
             pos_u = pos_u.to(device)
@@ -26,7 +27,7 @@ def Node2Vec(args,G, path, window_size=4,epochs=150):
         loss.backward()
         optimizer.step()
         # tq.set_postfix({'loss': '%.03f' % loss.item()}, refresh=False)
-                            
+        lr_sche.step()  
     with torch.no_grad():
         user_nids = torch.LongTensor(n2vModel.local_to_global_nid['author']).to(device)
         item_nids = torch.LongTensor(n2vModel.local_to_global_nid['paper']).to(device)

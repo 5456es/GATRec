@@ -20,11 +20,14 @@ def build_env(args,train_refs, cite_edges, coauthor_edges, paper_feature):
     rel_list[3]: (train_ref_tensor[:, 1], train_ref_tensor[:, 0])
     }
     hetero_graph = dgl.heterograph(graph_data)
+    
 
     author_feature , paper_feature_= Node2Vec(args,hetero_graph, ['coauthor','ref','cite','beref'])
 
     node_features = {'author': author_feature, 'paper': paper_feature if args.input_dim == 512 else paper_feature_}
 
+
+    
     hetero_graph.ndata['features'] = node_features
     hetero_graph = hetero_graph.to(device)
 

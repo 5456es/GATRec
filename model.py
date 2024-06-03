@@ -8,31 +8,31 @@ import dgl.function as fn
 
 
 class RGCN(nn.Module):
-    def __init__(self, in_feat, hidden_feat, out_feat, rel_names):
+    def __init__(self, in_feat, hidden_feat, out_feat, rel_names,args):
         super().__init__()
 
      
         self.layers = 0
   
-
+        self.heads=args.heads
         self.in_feats = in_feat
         self.hid_feats = hidden_feat
         self.out_feats = out_feat
 
         self.conv1 = dglnn.HeteroGraphConv({
-            rel: dglnn.GATConv(self.in_feats, self.hid_feats // 8, 8)
+            rel: dglnn.GATConv(self.in_feats, self.hid_feats // self.heads[0], self.heads[0])
             for rel in rel_names}, aggregate='mean')
         
         self.conv2 = dglnn.HeteroGraphConv({
-            rel: dglnn.GATConv(self.hid_feats, self.hid_feats // 8, 8)
+            rel: dglnn.GATConv(self.hid_feats, self.hid_feats // self.heads[1], self.heads[1])
             for rel in rel_names}, aggregate='mean')
         
         self.conv3 = dglnn.HeteroGraphConv({
-            rel: dglnn.GATConv(self.hid_feats, self.hid_feats // 4, 4)
+            rel: dglnn.GATConv(self.hid_feats, self.hid_feats // self.heads[2], self.heads[2])
             for rel in rel_names}, aggregate='mean')
 
         self.conv4 = dglnn.HeteroGraphConv({
-            rel: dglnn.GATConv(self.hid_feats, self.out_feats // 4, 4)
+            rel: dglnn.GATConv(self.hid_feats, self.out_feats // self.heads[3], self.heads[3])
             for rel in rel_names}, aggregate='mean')
 
         
@@ -81,8 +81,8 @@ class RGCN(nn.Module):
         h[self.rel_list[1]] = F.leaky_relu(self.bns2[1](h[self.rel_list[1]].view(-1, self.hid_feats)))
         
         h = self.conv3(blocks[2], h)
-        h[self.rel_list[0]] = F.leaky_relu(self.bns[2](h[self.rel_list[0]].view(-1, self.hid_feats)))
-        h[self.rel_list[1]] = F.leaky_relu(self.bns2[2](h[self.rel_list[1]].view(-1, self.hid_feats)))
+        h[self.rel_list[0]] = F.tanh(self.bns[2](h[self.rel_list[0]].view(-1, self.hid_feats)))
+        h[self.rel_list[1]] = F.tanh(self.bns2[2](h[self.rel_list[1]].view(-1, self.hid_feats)))
         
 
         h = self.conv4(blocks[3], h)
@@ -92,6 +92,61 @@ class RGCN(nn.Module):
 
 
         return h
+
+        # h = self.conv1(blocks[0], inputs)
+
+        # print(blocks[0].srcdata['_ID'])
+        # print('-'*40)
+        # for node_t in blocks[0].srcdata['ID'].keys():
+        #     print("node_t")
+        #     print(blocks[0].srcdata['ID'][node_t])
+        #     print(blocks[0].dstdata['ID'][node_t])
+        #     print(h[node_t].shape)
+        # raise NotImplementedError
+
+        
+
+        # self.rel_list = list(h.keys())
+        # h[self.rel_list[0]] = F.leaky_relu(self.bns[0](h[self.rel_list[0]].view(-1, self.hid_feats)))
+        # h[self.rel_list[1]] = F.leaky_relu(self.bns2[0](h[self.rel_list[1]].view(-1, self.hid_feats)))
+
+        # # print("h[1]shape")
+        # # for k,v in h.items():
+        # #     print(k,v.shape)
+
+        # h = self.conv2(blocks[1], h)
+        # h[self.rel_list[0]]=h[self.rel_list[0]].view(-1,self.hid_feats)
+        # h[self.rel_list[1]]=h[self.rel_list[1]].view(-1,self.hid_feats)
+        # h = self.residual_2(h, blocks[1], blocks[2])
+        # h[self.rel_list[0]] = F.leaky_relu(self.bns[1](h[self.rel_list[0]]))
+        # h[self.rel_list[1]] = F.leaky_relu(self.bns2[1](h[self.rel_list[1]]))
+
+        # # print("h[2]shape")
+        # # for k,v in h.items():
+        # #     print(k,v.shape)
+
+        # h = self.conv3(blocks[2], h)
+        # h[self.rel_list[0]]=h[self.rel_list[0]].view(-1,self.hid_feats)
+        # h[self.rel_list[1]]=h[self.rel_list[1]].view(-1,self.hid_feats)
+        # h = self.residual_2(h, blocks[2], blocks[3])
+        # h[self.rel_list[0]] = F.leaky_relu(self.bns[2](h[self.rel_list[0]]))
+        # h[self.rel_list[1]] = F.leaky_relu(self.bns2[2](h[self.rel_list[1]]))
+
+
+        # # print("h[3]shape")
+        # # for k,v in h.items():
+        # #     print(k,v.shape)
+
+        # h = self.conv4(blocks[3], h)
+
+        # h = {k: ((v.view(-1, self.out_feats))) for k, v in h.items()}
+
+        # # print("h[4]shape")
+        # # for k,v in h.items():
+        # #     print(k,v.shape)
+
+        # # raise NotImplementedError
+        # return h
 
 class ScorePredictor(nn.Module):
     def forward(self, edge_subgraph, h):
@@ -103,9 +158,9 @@ class ScorePredictor(nn.Module):
 
 
 class Model(nn.Module):
-    def __init__(self, in_features, hidden_features, out_features, etypes):
+    def __init__(self, in_features, hidden_features, out_features, etypes,args):
         super().__init__()
-        self.rgcn = RGCN(in_features, hidden_features, out_features, etypes)
+        self.rgcn = RGCN(in_features, hidden_features, out_features, etypes,args)
         self.pred = ScorePredictor()
 
     def forward(self, positive_graph, negative_graph, blocks, x):
