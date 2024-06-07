@@ -22,7 +22,7 @@ def parse_arguments():
 
     ### Train Parameters
     parser.add_argument("--input_dim", type=int, default=512, help="The input dimension for the model")
-    parser.add_argument("--hidden_dim", type=int, default=128, help="The hidden dimension for the model")
+    parser.add_argument("--hidden_dim", type=int, default=256, help="The hidden dimension for the model")
     parser.add_argument("--output_dim", type=int, default=64, help="The output dimension for the model")
     parser.add_argument("--batch_size", type=int, default=10000, help="The batch size for training")
     parser.add_argument("--num_epochs", type=int, default=100, help="The number of epochs to train for")
@@ -39,6 +39,8 @@ def parse_arguments():
     parser.add_argument("--seed", type=int, default=-1, help="The seed for the random number generator")
     parser.add_argument("--log_interval", type=int, default=100, help="The interval to log the training results")
 
+    # unbiased_sampler
+    parser.add_argument('--unbiased_sampler', default=True, type=bool, help='Use the unbiased sampler or not')
     return parser.parse_args()
 
 def main(args):

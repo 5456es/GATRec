@@ -16,10 +16,21 @@ def train(args, hetero_graph, test_refs, rel_list):
     train_eid_dict = {
         etype: hetero_graph.edges(etype=etype, form='eid')
         for etype in hetero_graph.etypes}
+    
+        # here to add the unbiased sampler
+    if args.unbiased_sampler:
+        print('Using unbiased sampler...')
+        from unbiased_sampler import load_model_get_sampler
+        unbiased_sampler = load_model_get_sampler(args)
+        print("The unbiased sampler is loaded successfully!")
 
     sampler = dgl.dataloading.NeighborSampler([args.k] * 4 )
-    sampler = dgl.dataloading.as_edge_prediction_sampler(
-        sampler, negative_sampler=dgl.dataloading.negative_sampler.GlobalUniform(args.k))
+    if not args.unbiased_sampler:
+        sampler = dgl.dataloading.as_edge_prediction_sampler(
+            sampler, negative_sampler=dgl.dataloading.negative_sampler.GlobalUniform(args.k))
+    elif args.unbiased_sampler:
+        sampler = dgl.dataloading.as_edge_prediction_sampler(
+            sampler, negative_sampler=unbiased_sampler(args.k))
     dataloader = dgl.dataloading.DataLoader(
         hetero_graph,                                 
         train_eid_dict,  
@@ -30,6 +41,10 @@ def train(args, hetero_graph, test_refs, rel_list):
         drop_last=False,    
         num_workers=0,     
     )
+
+
+        
+
 
     model = Model(args.input_dim, args.hidden_dim, args.output_dim, rel_list,args).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
