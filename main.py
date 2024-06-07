@@ -40,7 +40,9 @@ def parse_arguments():
     parser.add_argument("--log_interval", type=int, default=100, help="The interval to log the training results")
 
     # unbiased_sampler
-    parser.add_argument('--unbiased_sampler', default=True, type=bool, help='Use the unbiased sampler or not')
+    parser.add_argument('--unbiased_sampler', default=False, type=bool, help='Use the unbiased sampler or not')
+    parser.add_argument('--save_node_embeddings', default=False, type=bool, help='Save the node embeddings or not')
+    parser.add_argument('--unbiased_sampler_guide_model_path', default=None, type=str, help='The path to the unbiased sampler guide model')
     return parser.parse_args()
 
 def main(args):
