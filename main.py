@@ -17,7 +17,7 @@ def parse_arguments():
     parser.add_argument('--predict_path', type=str, default='./predictions', help='The path to save the prediction')
     parser.add_argument("--save_log_path", type=str,default='./logs/', help="The path to save the log")
     parser.add_argument("--save_embed_path", type=str,default='./embedding', help="The path to save the embeddings")
-    parser.add_argument("--load_embed_path", type=str,default='./embedding', help="The path to load the embeddings")
+    parser.add_argument("--load_embed_path", type=str,default=None, help="The path to load the embeddings")
 
 
     ### Train Parameters
@@ -42,8 +42,9 @@ def parse_arguments():
 
     # unbiased_sampler
     parser.add_argument('--unbiased_sampler', default=False, type=bool, help='Use the unbiased sampler or not')
-    parser.add_argument('--save_node_embeddings', default=False, type=bool, help='Save the node embeddings or not')
-    parser.add_argument('--unbiased_sampler_guide_model_path', default=None, type=str, help='The path to the unbiased sampler guide model')
+    parser.add_argument('--unbiased_sampler_node_feature_path', default=None, type=str, help='The path of node feature which is trained by former training')
+    # save node features: especially for the unbiased_sampler
+    parser.add_argument('--save_node_features', default=False, type=bool, help='Save the node features or not')
     return parser.parse_args()
 
 def main(args):
