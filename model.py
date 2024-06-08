@@ -94,10 +94,6 @@ class RGCN(nn.Module):
 
             h = {k: ((v.view(-1, self.out_feats))) for k, v in h.items()}
 
-
-
-
-
         else:
             h=inputs
             self.rel_list = list(inputs.keys())
@@ -114,13 +110,6 @@ class RGCN(nn.Module):
             
             h = self.convs[-1](blocks[-1],h)
             h = {k: ((v.view(-1, self.out_feats))) for k, v in h.items()} 
-
-
-        
-
-        
-
-
 
 
         return h
