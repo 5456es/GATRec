@@ -7,7 +7,7 @@ from sklearn.metrics import precision_recall_fscore_support
 from utils import *
 from tqdm import tqdm
 from datetime import   datetime
-from unbiased_sampler import load_model_get_sampler
+from unbiased_sampling import load_model_get_sampler
 import os
 
 
@@ -91,7 +91,10 @@ def train(args, hetero_graph, test_refs, rel_list):
             node_embeddings = model.rgcn(blocks, hetero_graph.ndata['features'])
             
         node_embeddings = {k: v.to('cpu') for k, v in node_embeddings.items()}
-
+        # if the last epoch and this training requires to save the node features
+        if args.save_node_features and epoch == args.num_epochs-1:
+            os.makedirs(f'unbiased_sampler/node_embedding/{args.input_dim}', exist_ok=True)
+            torch.save(node_embeddings, f'unbiased_sampler/node_embedding/{args.input_dim}/{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}_node_feature.pth')
         test_arr = np.array(test_refs.values)
         res = cos_sim(np.array(node_embeddings['author'][test_arr[:, 0]]), np.array(node_embeddings['paper'][test_arr[:, 1]]))
 

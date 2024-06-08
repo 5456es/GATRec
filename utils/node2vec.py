@@ -36,11 +36,5 @@ def Node2Vec(args,G, path, window_size=4,epochs=150):
         node_embeddings['paper'] = n2vModel.node_embed(item_nids).detach().cpu()
         print(node_embeddings['author'].shape, node_embeddings['paper'].shape)
     
-    # especially save the node embeddings for the unbiased_sampler
-    if args.save_node_embeddings:
-        import os
-        emb = node_embeddings['author']
-        os.makedirs(f'unbiased_sampler/node_embedding/{args.input_dim}', exist_ok=True)
-        torch.save(emb, f'unbiased_sampler/node_embedding/{args.input_dim}/author_feature.pt')
     return node_embeddings['author'].detach(),node_embeddings['paper'].detach()
         
