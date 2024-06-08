@@ -17,22 +17,23 @@ def parse_arguments():
     parser.add_argument('--predict_path', type=str, default='./predictions', help='The path to save the prediction')
     parser.add_argument("--save_log_path", type=str,default='./logs/', help="The path to save the log")
     parser.add_argument("--save_embed_path", type=str,default='./embedding', help="The path to save the embeddings")
-    parser.add_argument("--load_embed_path", type=str,default=None, help="The path to load the embeddings")
+    parser.add_argument("--load_embed_path", type=str,default='./embedding', help="The path to load the embeddings")
 
 
     ### Train Parameters
     parser.add_argument("--input_dim", type=int, default=512, help="The input dimension for the model")
-    parser.add_argument("--hidden_dim", type=int, default=256, help="The hidden dimension for the model")
+    parser.add_argument("--hidden_dim", type=int, default=512, help="The hidden dimension for the model")
     parser.add_argument("--output_dim", type=int, default=64, help="The output dimension for the model")
     parser.add_argument("--batch_size", type=int, default=10000, help="The batch size for training")
     parser.add_argument("--num_epochs", type=int, default=100, help="The number of epochs to train for")
-    parser.add_argument("--lr", type=float, default=0.001, help="The learning rate for training")
-    parser.add_argument("--lr_end", type=float, default=0.0001, help="The learning rate for training")
+    parser.add_argument("--lr", type=float, default=0.0001, help="The learning rate for training")
+    parser.add_argument("--lr_end", type=float, default=0.00001, help="The learning rate for training")
     parser.add_argument("--lr_decay", type=float, default=0.5, help="The learning rate decay for training")
     parser.add_argument('--lr_period', default=20, type=int, help='period for lr_scheduler')
     parser.add_argument("--weight_decay", type=float, default=0.00004, help="The weight decay for training")
     parser.add_argument("--k", type=int, default=4, help="The number of  samples to use")
     parser.add_argument("--heads", type=list, default=[16, 8, 8, 4], help="The number of heads for the GAT layers")
+    parser.add_argument("--residual", type=bool, default=True, help="The residual connection for the GAT layers")
 
     ### Other Parameters
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu", help="The device to run the model on, [cuda:x] or cpu")
@@ -55,14 +56,13 @@ def main(args):
 
     train_refs, test_refs, refs_to_pred, cite_edges, coauthor_edges, paper_feature=process_data(args)
     hetero_graph, rel_list = build_env(args,train_refs, cite_edges, coauthor_edges, paper_feature)
+
     torch.cuda.empty_cache()
-    ### sleep for 5s
     time.sleep(5)
+    
     best_embed, best_thresh, best_f1 = train(args, hetero_graph, test_refs, rel_list)
     gen_csv_prediction(args,best_embed, refs_to_pred, best_thresh, best_f1, args.seed)
     
-   
-    ### To be implemented
 
 if __name__ == "__main__":
 
@@ -71,6 +71,9 @@ if __name__ == "__main__":
     for arg in vars(args):
         print(f"{arg}: {getattr(args, arg)}")
     print("-" * 50)
+    if args.residual and args.hidden_dim!=512:
+        print("Warning: The residual connection is only available for hidden_dim=512")
+        args.residual=False
     torch.cuda.empty_cache()
     
     main(args)

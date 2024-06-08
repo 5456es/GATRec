@@ -22,10 +22,19 @@ def build_env(args,train_refs, cite_edges, coauthor_edges, paper_feature):
     hetero_graph = dgl.heterograph(graph_data)
     
 
-    author_feature , paper_feature_= Node2Vec(args,hetero_graph, ['coauthor','ref','cite','beref'])
+    if args.load_embed_path is not None:
+        node_features = torch.load(os.path.join(args.load_embed_path, 'node_features.pth'))
+        author_feature = node_features['author']
+        paper_feature = node_features['paper']
+    else:
+        author_feature , paper_feature_= Node2Vec(args,hetero_graph, ['coauthor','ref','cite','beref'])
 
     node_features = {'author': author_feature, 'paper': paper_feature if args.input_dim == 512 else paper_feature_}
-
+    
+    ### save this node_features for future use
+    if not os.path.exists(args.save_embed_path):
+        os.makedirs(args.save_embed_path)
+    torch.save(node_features, os.path.join(args.save_embed_path, 'node_features.pth'))
 
     
     hetero_graph.ndata['features'] = node_features

@@ -7,6 +7,7 @@ from sklearn.metrics import precision_recall_fscore_support
 from utils import *
 from tqdm import tqdm
 from datetime import   datetime
+from unbiased_sampler import load_model_get_sampler
 import os
 
 
@@ -16,21 +17,20 @@ def train(args, hetero_graph, test_refs, rel_list):
     train_eid_dict = {
         etype: hetero_graph.edges(etype=etype, form='eid')
         for etype in hetero_graph.etypes}
-    
-        # here to add the unbiased sampler
-    if args.unbiased_sampler:
-        print('Using unbiased sampler...')
-        from unbiased_sampler import load_model_get_sampler
-        unbiased_sampler = load_model_get_sampler(args)
-        print("The unbiased sampler is loaded successfully!")
+        
 
     sampler = dgl.dataloading.NeighborSampler([args.k] * 4 )
+
     if not args.unbiased_sampler:
         sampler = dgl.dataloading.as_edge_prediction_sampler(
             sampler, negative_sampler=dgl.dataloading.negative_sampler.GlobalUniform(args.k))
-    elif args.unbiased_sampler:
+    else:
+        print('Using unbiased sampler...')
+        unbiased_sampler = load_model_get_sampler(args)
+        print("The unbiased sampler is loaded successfully!")
         sampler = dgl.dataloading.as_edge_prediction_sampler(
             sampler, negative_sampler=unbiased_sampler(args.k))
+
     dataloader = dgl.dataloading.DataLoader(
         hetero_graph,                                 
         train_eid_dict,  
@@ -49,7 +49,8 @@ def train(args, hetero_graph, test_refs, rel_list):
     model = Model(args.input_dim, args.hidden_dim, args.output_dim, rel_list,args).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     # lr_sche = torch.optim.lr_scheduler.StepLR(opt, args.lr_period, args.lr_decay,verbose=True)
-    lr_sche=torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=10, eta_min=args.lr_end, last_epoch=-1, verbose=True)
+    lr_sche=torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.lr_period, eta_min=args.lr_end, last_epoch=-1, verbose=True)
+    
     if args.load_path != None:
         model.load_state_dict(torch.load(args.load_path,map_location=device))
         print('Model loaded from', args.load_path)
@@ -60,24 +61,15 @@ def train(args, hetero_graph, test_refs, rel_list):
     best_model = None
 
     epoch_loss_log=[]
-    print(f'Start training GAT on {device}...\n')
+    print(f'\nStart training GAT on {device}...\n')
     for epoch in range(args.num_epochs):
         model.train()
         epoch_loss = []
         t1 = time.time()
         print(f'epoch {epoch + 1}/{args.num_epochs}, ', end='\n')
         for step, (input_nodes, positive_graph, negative_graph, blocks) in enumerate(tqdm(dataloader)):
-            # print(input_nodes)
-            # for key in input_nodes:
-            #     print(input_nodes[key].shape)
-            # print(blocks[0].srcdata)
-            # print(positive_graph)
-            # print(negative_graph)
-            
+
             input_features = blocks[0].srcdata['features']
-            # for i in blocks[0].srcdata:
-            #     print(i)
-            #     print(blocks[0].srcdata[i])
 
             pos_score, neg_score = model(positive_graph, negative_graph, blocks, input_features)
             loss = compute_loss(pos_score, neg_score, rel_list[-1])
@@ -89,6 +81,7 @@ def train(args, hetero_graph, test_refs, rel_list):
             loss.backward()
             opt.step()
         lr_sche.step()
+        
         print('lr:',opt.param_groups[0]['lr'])
         print(f'loss: {(np.array(epoch_loss).mean()):.5f}')
         epoch_loss_log.append(np.array(epoch_loss).mean())
@@ -96,6 +89,7 @@ def train(args, hetero_graph, test_refs, rel_list):
         with torch.no_grad():
             blocks = [dgl.to_block(hetero_graph) for _ in range(4)]
             node_embeddings = model.rgcn(blocks, hetero_graph.ndata['features'])
+            
         node_embeddings = {k: v.to('cpu') for k, v in node_embeddings.items()}
 
         test_arr = np.array(test_refs.values)
@@ -146,6 +140,7 @@ def train(args, hetero_graph, test_refs, rel_list):
 
     current_time=datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     ### save the epoch loss log as {time}_loss.npy
+
     save_log_path = args.save_log_path
     if not os.path.exists(save_log_path):
         os.makedirs(save_log_path)
@@ -156,5 +151,6 @@ def train(args, hetero_graph, test_refs, rel_list):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     torch.save(best_model.state_dict(), f'{save_path}/{current_time}_{best_f1}_model.pth')
+    torch.save(model, f'{save_path}/{current_time}_{best_f1}_model_all.pth')
 
     return best_embed, best_thresh, best_f1
