@@ -33,7 +33,7 @@ def parse_arguments():
     parser.add_argument("--weight_decay", type=float, default=0.00004, help="The weight decay for training")
     parser.add_argument("--k", type=int, default=4, help="The number of  samples to use")
     parser.add_argument("--heads", type=list, default=[16, 8, 8, 4], help="The number of heads for the GAT layers")
-    parser.add_argument("--residual", type=bool, default=True, help="The residual connection for the GAT layers")
+    parser.add_argument("--residual", type=bool, default=False, help="The residual connection for the GAT layers")
 
     ### Other Parameters
     parser.add_argument("--device", type=str, default="cuda:0" if torch.cuda.is_available() else "cpu", help="The device to run the model on, [cuda:x] or cpu")
