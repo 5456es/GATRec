@@ -37,8 +37,8 @@ class RGCN(nn.Module):
 
         self.convs=[self.conv1,self.conv2,self.conv3,self.conv4]
 
-        self.bns = nn.ModuleList([nn.BatchNorm1d(self.hid_feats) for i in range(len(self.convs))])
-        self.bns2 = nn.ModuleList([nn.BatchNorm1d(self.hid_feats) for i in range(len(self.convs))])
+        self.bns = nn.ModuleList([nn.BatchNorm1d(self.hid_feats) for i in range(3)])
+        self.bns2 = nn.ModuleList([nn.BatchNorm1d(self.hid_feats) for i in range(3)])
 
 
     def residual_2(self, h, block_before, block_after):

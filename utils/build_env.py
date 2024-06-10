@@ -26,7 +26,9 @@ def build_env(args,train_refs, cite_edges, coauthor_edges, paper_feature):
         node_features = torch.load(os.path.join(args.load_embed_path, 'node_features.pth'))
         author_feature = node_features['author']
         paper_feature = node_features['paper']
+        print('Load node features from', args.load_embed_path)
     else:
+        print('Start training Node2Vec model...')
         author_feature , paper_feature_= Node2Vec(args,hetero_graph, ['coauthor','ref','cite','beref'])
 
     node_features = {'author': author_feature, 'paper': paper_feature if args.input_dim == 512 else paper_feature_}
