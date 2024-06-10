@@ -52,7 +52,8 @@ def train(args, hetero_graph, test_refs, rel_list):
     lr_sche=torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=args.lr_period, eta_min=args.lr_end, last_epoch=-1, verbose=True)
     
     if args.load_path != None:
-        model.load_state_dict(torch.load(args.load_path,map_location=device))
+        model.load_state_dict(torch.load(args.load_path))
+        
         print('Model loaded from', args.load_path)
 
     best_f1 = 0
@@ -154,6 +155,6 @@ def train(args, hetero_graph, test_refs, rel_list):
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     torch.save(best_model.state_dict(), f'{save_path}/{current_time}_{best_f1}_model.pth')
-    torch.save(model, f'{save_path}/{current_time}_{best_f1}_model_all.pth')
+    torch.save(model.state_dict(), f'{save_path}/{current_time}_{best_f1}_model_all.pth')
 
     return best_embed, best_thresh, best_f1
