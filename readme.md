@@ -1,4 +1,11 @@
 # GATRec
+This is a GAT-based model to do recommendation on the academic network.
+
+## Quick Start
+
+
+
+
 
 ## Unbiased Sampler
 
