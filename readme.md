@@ -3,7 +3,7 @@ This is a GAT-based model to do recommendation on the academic network.
 
 ### [EVALUATION for our Final Result]
 ```shell
- python main.py --load_path "./save/2024-06-10 18:35:00_0.9463062640247569_model.pth" --load_embed_path "./embedding/node_features.pth"
+ python main.py --load_path "./save/2024-06-10 18:35:00_0.9463062640247569_model.pth" --load_embed_path "./embedding"
 ```
 
 
