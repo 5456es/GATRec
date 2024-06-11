@@ -1,6 +1,12 @@
 # GATRec
 This is a GAT-based model to do recommendation on the academic network.
 
+### [EVALUATION for our Final Result]
+```shell
+ python main.py --load_path "./save/2024-06-10 18:35:00_0.9463062640247569_model.pth" --load_embed_path "./embedding/node_features.pth"
+```
+
+
 ## Quick Start
 ```shell
  python main.py --data_path --batch_size 10000 --lr 0.0001 --lr_end 0.00001 --num_epochs 100 
@@ -17,8 +23,6 @@ Attention: Provided model follows the default setting, if you want to use the pr
  python main.py --load_embed_path path_to_node_feature
 ```
 You may use our pretrained node feature to train the model or you can train the model with your own node feature by setting load_embed_path to None, the pretrained node feature shall be automatically saved in the ./embedding folder.
-
-
 
 
 ### Unbiased Sampler
